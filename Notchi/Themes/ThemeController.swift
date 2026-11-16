@@ -54,26 +54,31 @@ final class ThemeController {
             let front = OverlayWindow(screen: screen, level: .floating)
             var back: OverlayWindow?
             let scale = screen.backingScaleFactor
+            let size = screen.frame.size
 
             if next.showsSnowfall {
+                let snow = SnowEffects.snowfall(size: size, amount: next.effectiveAmount, scale: scale)
                 if next.placement == .desktop {
                     let window = OverlayWindow(screen: screen, level: desktopLevel)
-                    window.host.addSublayer(SnowEffects.snowfall(in: window.host.bounds, amount: next.amount, scale: scale))
+                    window.host.addSublayer(snow)
                     back = window
                 } else {
-                    front.host.addSublayer(SnowEffects.snowfall(in: front.host.bounds, amount: next.amount, scale: scale))
+                    front.host.addSublayer(snow)
                 }
             }
 
             if next.showsLights {
-                let hangY = front.host.bounds.height - Self.menuBarHeight(of: screen)
-                front.host.addSublayer(FairyLights.make(in: front.host.bounds, hangY: hangY, scale: scale))
+                let bounds = CGRect(origin: .zero, size: size)
+                let hangY = size.height - Self.menuBarHeight(of: screen)
+                front.host.addSublayer(FairyLights.make(in: bounds, hangY: hangY, scale: scale))
             }
 
             overlays.append(Overlay(screen: screen, front: front, back: back))
         }
 
         if next.showsWindowSnow {
+            windowCaps.decorations = next.decorations
+            windowCaps.festive = next.isFestive
             updateCaps()
             capsTimer = Timer.scheduledTimer(withTimeInterval: 0.3, repeats: true) { [weak self] _ in
                 Task { @MainActor in self?.updateCaps() }
@@ -107,7 +112,13 @@ final class ThemeController {
     }
 
     private func updateCaps() {
-        windowCaps.update(targets: overlays.map { .init(frame: $0.screen.frame, layer: $0.front.host) })
+        windowCaps.update(targets: overlays.map { overlay in
+            .init(
+                frame: overlay.screen.frame,
+                topLimit: overlay.screen.frame.maxY - Self.menuBarHeight(of: overlay.screen),
+                layer: overlay.front.host
+            )
+        })
     }
 
     // MARK: - Puffs

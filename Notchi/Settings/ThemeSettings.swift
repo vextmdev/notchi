@@ -1,13 +1,19 @@
+import AppKit
 import SwiftUI
 
 struct ThemeSettings: View {
     @AppStorage(Preferences.theme) private var theme: Theme = .off
     @AppStorage(Preferences.snowfallEnabled) private var snowfall = true
     @AppStorage(Preferences.snowAmount) private var amount: SnowAmount = .light
-    @AppStorage(Preferences.snowPlacement) private var placement: SnowPlacement = .desktop
+    @AppStorage(Preferences.snowPlacement) private var placement: SnowPlacement = .everywhere
     @AppStorage(Preferences.windowSnowEnabled) private var windowSnow = true
+    @AppStorage(Preferences.snowmanEnabled) private var snowman = true
     @AppStorage(Preferences.fairyLightsEnabled) private var fairyLights = true
     @AppStorage(Preferences.snowPuffsEnabled) private var puffs = true
+
+    private var reduceMotion: Bool {
+        NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+    }
 
     var body: some View {
         Form {
@@ -22,7 +28,7 @@ struct ThemeSettings: View {
                 .padding(.vertical, 4)
             }
 
-            Section("Snow") {
+            Section {
                 Toggle("Falling snow", isOn: $snowfall)
 
                 Picker("Amount", selection: $amount) {
@@ -35,8 +41,22 @@ struct ThemeSettings: View {
                     ForEach(SnowPlacement.allCases) { Text($0.title).tag($0) }
                 }
                 .disabled(!snowfall)
+            } header: {
+                Text("Snowfall")
+            } footer: {
+                if reduceMotion {
+                    Label("Falling snow is paused because Reduce Motion is on in System Settings → Accessibility → Display.", systemImage: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.orange)
+                } else {
+                    Text("In Low Power Mode the snow switches to Light to save battery.")
+                }
+            }
+            .disabled(theme == .off)
 
+            Section("Winter fun") {
                 Toggle("Snow settles on top of windows", isOn: $windowSnow)
+                Toggle("Snowman and rolling snowballs", isOn: $snowman)
+                    .disabled(!windowSnow)
                 Toggle("Snow puffs from the menu bar and notch", isOn: $puffs)
             }
             .disabled(theme == .off)
@@ -46,7 +66,7 @@ struct ThemeSettings: View {
             } header: {
                 Text("Christmas")
             } footer: {
-                Text("Falling snow pauses automatically in Low Power Mode and when Reduce Motion is on.")
+                Text("The Christmas theme also gives the snowman a Santa hat and adds colorful sparkles to the snow puffs.")
             }
             .disabled(theme != .christmas)
         }

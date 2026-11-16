@@ -5,10 +5,14 @@ final class OverlayWindow: NSWindow {
     let host: CALayer
 
     init(screen: NSScreen, level: NSWindow.Level) {
+        let size = screen.frame.size
+
+        // the layer needs its size set by hand, otherwise it starts at 0x0 and nothing shows up
         let layer = CALayer()
+        layer.frame = CGRect(origin: .zero, size: size)
         layer.contentsScale = screen.backingScaleFactor
 
-        let view = NSView(frame: CGRect(origin: .zero, size: screen.frame.size))
+        let view = NSView(frame: CGRect(origin: .zero, size: size))
         view.layer = layer
         view.wantsLayer = true
         host = layer

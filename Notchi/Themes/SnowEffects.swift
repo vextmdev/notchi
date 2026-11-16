@@ -3,22 +3,31 @@ import QuartzCore
 
 // particle effects run on the GPU through CAEmitterLayer, so they cost almost no CPU
 enum SnowEffects {
-    static let flake: CGImage = makeSoftDot(size: 32)
+    static let softDot: CGImage = makeSoftDot(size: 32)
+    static let crystal: CGImage = makeCrystal(size: 48) ?? softDot
 
-    static func snowfall(in bounds: CGRect, amount: SnowAmount, scale: CGFloat) -> CAEmitterLayer {
+    static func snowfall(size: CGSize, amount: SnowAmount, scale: CGFloat) -> CAEmitterLayer {
+        let bounds = CGRect(origin: .zero, size: size)
+
         let emitter = CAEmitterLayer()
         emitter.frame = bounds
         emitter.contentsScale = scale
         emitter.emitterShape = .line
-        emitter.emitterPosition = CGPoint(x: bounds.midX, y: bounds.maxY + 10)
-        emitter.emitterSize = CGSize(width: bounds.width * 1.3, height: 1)
+        emitter.emitterPosition = CGPoint(x: bounds.midX, y: bounds.maxY + 20)
+        emitter.emitterSize = CGSize(width: bounds.width * 1.4, height: 1)
 
-        // small slow flakes in the back, bigger faster ones in front, gives a bit of depth
+        // three depths: tiny soft flakes far away, bigger ones closer, real crystals up front
         let rate = amount.birthRate
-        emitter.emitterCells = [
-            fallingCell(birthRate: rate, velocity: 32, scale: 0.12, alpha: 0.55, distance: bounds.height),
-            fallingCell(birthRate: rate * 0.45, velocity: 60, scale: 0.22, alpha: 0.9, distance: bounds.height),
-        ]
+        let far = fallingCell("far", image: softDot, birthRate: rate, velocity: 26, scale: 0.1, alpha: 0.45, distance: size.height)
+        let mid = fallingCell("mid", image: softDot, birthRate: rate * 0.5, velocity: 45, scale: 0.19, alpha: 0.75, distance: size.height)
+        let near = fallingCell("near", image: crystal, birthRate: rate * 0.14, velocity: 65, scale: 0.3, alpha: 0.95, distance: size.height)
+        near.spinRange = 1.2
+        emitter.emitterCells = [far, mid, near]
+
+        emitter.add(windGusts(for: ["far", "mid", "near"]), forKey: "wind")
+
+        // start the simulation in the past so the screen is already full of snow
+        emitter.beginTime = CACurrentMediaTime() - 25
         return emitter
     }
 
@@ -30,10 +39,13 @@ enum SnowEffects {
         emitter.emitterPosition = point
         emitter.emitterSize = CGSize(width: width, height: 1)
 
-        var cells = [burstCell(color: .white, birthRate: 90 * amount, scale: 0.18)]
+        var cells = [
+            burstCell(image: softDot, color: .white, birthRate: 80 * amount, scale: 0.17),
+            burstCell(image: crystal, color: .white, birthRate: 10 * amount, scale: 0.22),
+        ]
         if festive {
             cells += [NSColor.systemRed, .systemGreen, .systemYellow].map {
-                burstCell(color: $0, birthRate: 14 * amount, scale: 0.12)
+                burstCell(image: softDot, color: $0, birthRate: 12 * amount, scale: 0.12)
             }
         }
         emitter.emitterCells = cells
@@ -46,36 +58,37 @@ enum SnowEffects {
 
     // MARK: - Cells
 
-    private static func fallingCell(birthRate: Float, velocity: CGFloat, scale: CGFloat, alpha: CGFloat, distance: CGFloat) -> CAEmitterCell {
+    private static func fallingCell(_ name: String, image: CGImage, birthRate: Float, velocity: CGFloat, scale: CGFloat, alpha: CGFloat, distance: CGFloat) -> CAEmitterCell {
         let cell = CAEmitterCell()
-        cell.contents = flake
+        cell.name = name
+        cell.contents = image
         cell.birthRate = birthRate
-        cell.lifetime = Float(distance / velocity) * 1.4
+        cell.lifetime = Float(distance / velocity) * 1.3
         cell.velocity = velocity
-        cell.velocityRange = velocity * 0.35
+        cell.velocityRange = velocity * 0.3
         cell.emissionLongitude = -.pi / 2
-        cell.emissionRange = .pi / 10
-        cell.yAcceleration = -6
+        cell.emissionRange = .pi / 12
+        cell.yAcceleration = -4
         cell.xAcceleration = 3
         cell.scale = scale
-        cell.scaleRange = scale * 0.5
-        cell.alphaRange = 0.25
-        cell.spinRange = 1.5
+        cell.scaleRange = scale * 0.4
+        cell.alphaRange = 0.2
+        cell.spinRange = 0.6
         cell.color = NSColor(white: 1, alpha: alpha).cgColor
         return cell
     }
 
-    private static func burstCell(color: NSColor, birthRate: Float, scale: CGFloat) -> CAEmitterCell {
+    private static func burstCell(image: CGImage, color: NSColor, birthRate: Float, scale: CGFloat) -> CAEmitterCell {
         let cell = CAEmitterCell()
-        cell.contents = flake
+        cell.contents = image
         cell.birthRate = birthRate
         cell.lifetime = 3
         cell.lifetimeRange = 1
-        cell.velocity = 50
-        cell.velocityRange = 35
+        cell.velocity = 45
+        cell.velocityRange = 30
         cell.emissionLongitude = -.pi / 2
         cell.emissionRange = .pi / 3
-        cell.yAcceleration = -45
+        cell.yAcceleration = -40
         cell.scale = scale
         cell.scaleRange = scale * 0.5
         cell.alphaSpeed = -0.3
@@ -83,6 +96,24 @@ enum SnowEffects {
         cell.color = color.cgColor
         return cell
     }
+
+    // slowly changing sideways push, makes the snow drift instead of falling straight down
+    private static func windGusts(for cells: [String]) -> CAAnimationGroup {
+        let values: [CGFloat] = [3, 10, -2, 14, 5, -4, 8, 3]
+        let animations = cells.map { name -> CAKeyframeAnimation in
+            let gust = CAKeyframeAnimation(keyPath: "emitterCells.\(name).xAcceleration")
+            gust.values = values
+            gust.calculationMode = .cubic
+            return gust
+        }
+        let group = CAAnimationGroup()
+        group.animations = animations
+        group.duration = 48
+        group.repeatCount = .infinity
+        return group
+    }
+
+    // MARK: - Images
 
     private static func makeSoftDot(size: Int) -> CGImage {
         let space = CGColorSpaceCreateDeviceRGB()
@@ -110,5 +141,26 @@ enum SnowEffects {
             options: []
         )
         return context.makeImage()!
+    }
+
+    // the ❄ symbol drawn white, used for the big flakes in front
+    private static func makeCrystal(size: CGFloat) -> CGImage? {
+        let config = NSImage.SymbolConfiguration(pointSize: size * 0.75, weight: .light)
+            .applying(NSImage.SymbolConfiguration(paletteColors: [.white]))
+        guard let symbol = NSImage(systemSymbolName: "snowflake", accessibilityDescription: nil)?
+            .withSymbolConfiguration(config) else { return nil }
+
+        let image = NSImage(size: NSSize(width: size, height: size), flipped: false) { rect in
+            let symbolSize = symbol.size
+            symbol.draw(in: NSRect(
+                x: (rect.width - symbolSize.width) / 2,
+                y: (rect.height - symbolSize.height) / 2,
+                width: symbolSize.width,
+                height: symbolSize.height
+            ))
+            return true
+        }
+        var rect = CGRect(x: 0, y: 0, width: size, height: size)
+        return image.cgImage(forProposedRect: &rect, context: nil, hints: nil)
     }
 }

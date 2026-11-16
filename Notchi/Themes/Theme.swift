@@ -34,16 +34,16 @@ enum SnowAmount: String, CaseIterable, Identifiable {
 
     var birthRate: Float {
         switch self {
-        case .light: return 4
-        case .medium: return 10
-        case .heavy: return 24
+        case .light: return 12
+        case .medium: return 26
+        case .heavy: return 55
         }
     }
 }
 
 enum SnowPlacement: String, CaseIterable, Identifiable {
-    case desktop
     case everywhere
+    case desktop
 
     var id: Self { self }
 
@@ -62,13 +62,16 @@ struct ThemeConfig: Equatable {
     var amount: SnowAmount
     var placement: SnowPlacement
     var windowSnow: Bool
+    var decorations: Bool
     var fairyLights: Bool
     var puffs: Bool
     var reduceMotion: Bool
     var lowPower: Bool
 
     var isFestive: Bool { theme == .christmas }
-    var showsSnowfall: Bool { theme != .off && snowfall && !reduceMotion && !lowPower }
+    var showsSnowfall: Bool { theme != .off && snowfall && !reduceMotion }
+    // keep it light on battery saver instead of turning it off
+    var effectiveAmount: SnowAmount { lowPower ? .light : amount }
     var showsWindowSnow: Bool { theme != .off && windowSnow }
     var showsLights: Bool { theme == .christmas && fairyLights }
     var showsPuffs: Bool { theme != .off && puffs && !reduceMotion }
@@ -79,8 +82,9 @@ struct ThemeConfig: Equatable {
             theme: Theme(rawValue: defaults.string(forKey: Preferences.theme) ?? "") ?? .off,
             snowfall: defaults.bool(forKey: Preferences.snowfallEnabled),
             amount: SnowAmount(rawValue: defaults.string(forKey: Preferences.snowAmount) ?? "") ?? .light,
-            placement: SnowPlacement(rawValue: defaults.string(forKey: Preferences.snowPlacement) ?? "") ?? .desktop,
+            placement: SnowPlacement(rawValue: defaults.string(forKey: Preferences.snowPlacement) ?? "") ?? .everywhere,
             windowSnow: defaults.bool(forKey: Preferences.windowSnowEnabled),
+            decorations: defaults.bool(forKey: Preferences.snowmanEnabled),
             fairyLights: defaults.bool(forKey: Preferences.fairyLightsEnabled),
             puffs: defaults.bool(forKey: Preferences.snowPuffsEnabled),
             reduceMotion: NSWorkspace.shared.accessibilityDisplayShouldReduceMotion,

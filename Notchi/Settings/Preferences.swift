@@ -14,6 +14,7 @@ enum Preferences {
     static let windowSnowEnabled = "windowSnowEnabled"
     static let fairyLightsEnabled = "fairyLightsEnabled"
     static let snowPuffsEnabled = "snowPuffsEnabled"
+    static let snowmanEnabled = "snowmanEnabled"
 
     // keep these in sync with the @AppStorage defaults in SettingsView
     static func registerDefaults() {
@@ -27,10 +28,11 @@ enum Preferences {
             theme: "off",
             snowfallEnabled: true,
             snowAmount: "light",
-            snowPlacement: "desktop",
+            snowPlacement: "everywhere",
             windowSnowEnabled: true,
             fairyLightsEnabled: true,
             snowPuffsEnabled: true,
+            snowmanEnabled: true,
         ])
     }
 }

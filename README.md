@@ -22,7 +22,7 @@ Hover over the notch for your clipboard history, a file shelf and music controls
 - **Respects passwords**: items marked as concealed by password managers are never recorded.
 - **Media controls**: see what's playing in Spotify or Apple Music, with artwork, play/pause and skip.
 - **macOS tweaks**: keep your Mac awake, hide desktop icons, show hidden files, instant Dock, screenshot format and folder, all with one switch.
-- **Themes**: a Snow and a Christmas theme with falling snow, snow that settles on top of your windows, snow puffs from the menu bar and twinkling fairy lights.
+- **Themes**: Snow and Christmas themes with realistic falling snow, snow that piles up on your windows, a snowman, rolling snowballs and twinkling fairy lights.
 - **Lightweight**: native Swift, no Electron, no tracking, nothing leaves your Mac.
 - Works on Macs without a notch too (shows a small pill at the top of the screen).
 
