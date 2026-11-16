@@ -1,3 +1,4 @@
+import AppKit
 import ServiceManagement
 import SwiftUI
 
@@ -42,26 +43,27 @@ struct SettingsView: View {
     @ObservedObject var shelf: ShelfStore
     @ObservedObject var keepAwake: KeepAwake
 
-    @State private var page: SettingsPage? = .general
+    @State private var page: SettingsPage = .general
 
     var body: some View {
         HStack(spacing: 0) {
-            List(SettingsPage.allCases, selection: $page) { page in
-                Label {
-                    Text(page.title)
-                } icon: {
-                    SettingsIcon(symbol: page.symbol, color: page.color)
+            // plain stack instead of a List, the List shifted under the traffic lights on first open
+            VStack(alignment: .leading, spacing: 2) {
+                ForEach(SettingsPage.allCases) { item in
+                    SidebarRow(page: item, isSelected: page == item) { page = item }
                 }
-                .tag(page)
+                Spacer()
             }
-            .listStyle(.sidebar)
-            .contentMargins(.top, 30, for: .scrollContent)
+            .padding(.top, 52)
+            .padding(.horizontal, 10)
             .frame(width: 200)
+            .frame(maxHeight: .infinity)
+            .background(SidebarBackground())
 
             Divider()
 
             VStack(alignment: .leading, spacing: 0) {
-                Text((page ?? .general).title)
+                Text(page.title)
                     .font(.title2.bold())
                     .padding(.horizontal, 28)
                     .padding(.top, 14)
@@ -79,7 +81,7 @@ struct SettingsView: View {
 
     @ViewBuilder
     private var detail: some View {
-        switch page ?? .general {
+        switch page {
         case .general:
             GeneralSettings()
         case .storage:
@@ -90,6 +92,44 @@ struct SettingsView: View {
             AboutSettings()
         }
     }
+}
+
+private struct SidebarRow: View {
+    let page: SettingsPage
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 8) {
+                SettingsIcon(symbol: page.symbol, color: page.color)
+                Text(page.title)
+                    .foregroundStyle(isSelected ? Color.white : Color.primary)
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 6)
+            .padding(.vertical, 5)
+            .background(
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .fill(isSelected ? Color.accentColor : Color.clear)
+            )
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+// the frosted sidebar look from System Settings
+private struct SidebarBackground: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSVisualEffectView {
+        let view = NSVisualEffectView()
+        view.material = .sidebar
+        view.blendingMode = .behindWindow
+        view.state = .followsWindowActiveState
+        return view
+    }
+
+    func updateNSView(_ nsView: NSVisualEffectView, context: Context) {}
 }
 
 // colored rounded square like in System Settings
