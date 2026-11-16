@@ -3,7 +3,7 @@
 # Notchi
 
 **Your MacBook notch, but useful.**
-Hover over the notch to see your clipboard history and control your music.
+Hover over the notch for your clipboard history, a file shelf and music controls.
 
 <!-- TODO: demo gif -->
 <!-- ![Notchi demo](docs/demo.gif) -->
@@ -18,6 +18,7 @@ Hover over the notch to see your clipboard history and control your music.
 
 - **Hover to open**: move your mouse to the notch and it smoothly expands. Move away and it tucks back in.
 - **Clipboard history**: the last 30 things you copied (text and images). Click to copy again, search, pin favorites.
+- **File shelf**: drag files onto the notch to park them there, then drag them out wherever you need them. Click for Quick Look.
 - **Respects passwords**: items marked as concealed by password managers are never recorded.
 - **Media controls**: see what's playing in Spotify or Apple Music, with artwork, play/pause and skip.
 - **Lightweight**: native Swift, no Electron, no tracking, nothing leaves your Mac.
@@ -47,7 +48,7 @@ Then press **Run** (⌘R) in Xcode.
 ## Roadmap
 
 - [ ] Prebuilt, notarized releases + Homebrew cask
-- [ ] File shelf: drag files onto the notch to keep them handy
+- [x] File shelf
 - [ ] More media sources (browsers, other players)
 - [ ] Settings window (history size, hover delay, which widgets to show)
 - [ ] Calendar and battery widgets

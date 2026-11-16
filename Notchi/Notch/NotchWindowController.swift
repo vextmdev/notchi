@@ -15,15 +15,19 @@ final class NotchWindowController {
     private var collapseWorkItem: DispatchWorkItem?
     private var cancellables = Set<AnyCancellable>()
 
+    private var dragChangeCount = NSPasteboard(name: .drag).changeCount
+    private var mouseDownInPanel = false
+
     private let hoverPadding: CGFloat = 10
+    private let dragPadding: CGFloat = 40
     private let expandDelay: TimeInterval = 0.12
     private let collapseDelay: TimeInterval = 0.3
 
-    init(model: NotchViewModel, clipboard: ClipboardMonitor, media: MediaController) {
+    init(model: NotchViewModel, clipboard: ClipboardMonitor, media: MediaController, shelf: ShelfStore) {
         self.model = model
         self.panel = NotchPanel(contentRect: NSRect(origin: .zero, size: model.expandedSize))
 
-        let rootView = NotchView(model: model, clipboard: clipboard, media: media)
+        let rootView = NotchView(model: model, clipboard: clipboard, media: media, shelf: shelf)
         let hostingView = NSHostingView(rootView: rootView)
         hostingView.sizingOptions = []
         panel.contentView = hostingView
@@ -56,14 +60,18 @@ final class NotchWindowController {
         panel.setFrame(frame, display: true)
     }
 
-    // MARK: - Hover
+    // MARK: - Mouse
 
     private func startMonitoring() {
-        globalMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.mouseMoved, .leftMouseDragged]) { [weak self] _ in
-            Task { @MainActor in self?.handleMouseMoved() }
+        let events: NSEvent.EventTypeMask = [.mouseMoved, .leftMouseDragged, .leftMouseDown, .leftMouseUp]
+
+        globalMonitor = NSEvent.addGlobalMonitorForEvents(matching: events) { [weak self] event in
+            let type = event.type
+            Task { @MainActor in self?.handleMouse(type) }
         }
-        localMonitor = NSEvent.addLocalMonitorForEvents(matching: [.mouseMoved, .leftMouseDragged]) { [weak self] event in
-            Task { @MainActor in self?.handleMouseMoved() }
+        localMonitor = NSEvent.addLocalMonitorForEvents(matching: events) { [weak self] event in
+            let type = event.type
+            Task { @MainActor in self?.handleMouse(type) }
             return event
         }
         screenObserver = NotificationCenter.default.addObserver(
@@ -75,36 +83,58 @@ final class NotchWindowController {
         }
     }
 
-    private func handleMouseMoved() {
+    private func handleMouse(_ type: NSEvent.EventType) {
         let mouse = NSEvent.mouseLocation
 
+        if type == .leftMouseDown {
+            dragChangeCount = NSPasteboard(name: .drag).changeCount
+            mouseDownInPanel = model.isExpanded && panel.frame.contains(mouse)
+        }
+
+        let isButtonDown = NSEvent.pressedMouseButtons & 1 != 0
+        let isDraggingFiles = isButtonDown && dragHasFiles()
+
         if model.isExpanded {
-            if panel.frame.insetBy(dx: -hoverPadding, dy: -hoverPadding).contains(mouse) {
+            let isInside = panel.frame.insetBy(dx: -hoverPadding, dy: -hoverPadding).contains(mouse)
+            // stay open mid-drag so you can drop files in or drag them out
+            let isDragging = isButtonDown && (mouseDownInPanel || isDraggingFiles)
+            if isInside || isDragging {
                 cancelCollapse()
             } else {
                 scheduleCollapse()
             }
-        } else if isInHotZone(mouse) {
+        } else if isDraggingFiles, isInHotZone(mouse, padding: dragPadding) {
+            model.selectedTab = .shelf
+            expand()
+        } else if !isButtonDown, isInHotZone(mouse, padding: hoverPadding) {
             scheduleExpand()
         } else {
             cancelExpand()
         }
     }
 
-    private func isInHotZone(_ point: NSPoint) -> Bool {
+    // the drag pasteboard changes when a new drag starts, so compare against the last mouse down
+    private func dragHasFiles() -> Bool {
+        let pasteboard = NSPasteboard(name: .drag)
+        guard pasteboard.changeCount != dragChangeCount else { return false }
+        return pasteboard.canReadObject(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true])
+    }
+
+    private func isInHotZone(_ point: NSPoint, padding: CGFloat) -> Bool {
         guard let geometry else { return false }
         let screenFrame = geometry.screen.frame
         let size = model.collapsedSize
         let zone = NSRect(
-            x: screenFrame.midX - size.width / 2 - hoverPadding,
-            y: screenFrame.maxY - size.height - 4,
-            width: size.width + hoverPadding * 2,
-            height: size.height + 8 // extra so the top pixel row counts
+            x: screenFrame.midX - size.width / 2 - padding,
+            y: screenFrame.maxY - size.height - padding / 2,
+            width: size.width + padding * 2,
+            height: size.height + padding / 2 + 4 // extra so the top pixel row counts
         )
         return zone.contains(point)
     }
 
     private func expand() {
+        cancelExpand()
         cancelCollapse()
         guard !model.isExpanded else { return }
         model.isExpanded = true
@@ -115,6 +145,7 @@ final class NotchWindowController {
     private func collapse() {
         guard model.isExpanded else { return }
         model.isExpanded = false
+        model.isDropTargeted = false
         panel.ignoresMouseEvents = true
         if panel.isKeyWindow {
             panel.resignKey()
@@ -128,7 +159,7 @@ final class NotchWindowController {
             Task { @MainActor in
                 guard let self else { return }
                 self.expandWorkItem = nil
-                if self.isInHotZone(NSEvent.mouseLocation) {
+                if self.isInHotZone(NSEvent.mouseLocation, padding: self.hoverPadding) {
                     self.expand()
                 }
             }

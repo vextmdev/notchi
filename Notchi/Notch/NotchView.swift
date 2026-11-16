@@ -1,9 +1,11 @@
+import QuickLook
 import SwiftUI
 
 struct NotchView: View {
     @ObservedObject var model: NotchViewModel
     @ObservedObject var clipboard: ClipboardMonitor
     @ObservedObject var media: MediaController
+    @ObservedObject var shelf: ShelfStore
 
     private var currentSize: CGSize {
         model.isExpanded ? model.expandedSize : model.collapsedSize
@@ -20,7 +22,7 @@ struct NotchView: View {
                     .fill(Color.black)
 
                 if model.isExpanded {
-                    ExpandedContent(clipboard: clipboard, media: media)
+                    ExpandedContent(model: model, clipboard: clipboard, media: media, shelf: shelf)
                         .padding(.top, model.notchSize.height + 6)
                         .padding(.horizontal, 22)
                         .padding(.bottom, 16)
@@ -43,24 +45,8 @@ struct NotchView: View {
         .animation(.spring(response: 0.38, dampingFraction: 0.8), value: model.isExpanded)
         .animation(.spring(response: 0.45, dampingFraction: 0.85), value: model.showsNowPlaying)
         .environment(\.colorScheme, .dark)
-    }
-}
-
-private struct ExpandedContent: View {
-    @ObservedObject var clipboard: ClipboardMonitor
-    @ObservedObject var media: MediaController
-
-    var body: some View {
-        HStack(spacing: 16) {
-            MediaView(media: media)
-                .frame(width: 210)
-
-            Rectangle()
-                .fill(Color.white.opacity(0.1))
-                .frame(width: 1)
-
-            ClipboardView(clipboard: clipboard)
-        }
+        // lives up here so the preview stays open when the notch collapses
+        .quickLookPreview($model.previewURL)
     }
 }
 

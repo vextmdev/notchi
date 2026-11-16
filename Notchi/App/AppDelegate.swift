@@ -6,6 +6,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let model = NotchViewModel()
     private let clipboard = ClipboardMonitor()
     private let media = MediaController()
+    private let shelf = ShelfStore()
 
     private var notchController: NotchWindowController?
     private var statusItem: NSStatusItem?
@@ -16,7 +17,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         clipboard.start()
         media.start()
 
-        notchController = NotchWindowController(model: model, clipboard: clipboard, media: media)
+        notchController = NotchWindowController(model: model, clipboard: clipboard, media: media, shelf: shelf)
         setUpStatusItem()
     }
 

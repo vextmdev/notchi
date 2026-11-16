@@ -2,7 +2,7 @@ import SwiftUI
 
 struct ClipboardView: View {
     @ObservedObject var clipboard: ClipboardMonitor
-    @State private var query = ""
+    let query: String
     @State private var copiedID: UUID?
 
     private var visibleItems: [ClipboardItem] {
@@ -14,40 +14,21 @@ struct ClipboardView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Label("Clipboard", systemImage: "doc.on.clipboard")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.6))
-
-                Spacer()
-
-                TextField("Search", text: $query)
-                    .textFieldStyle(.plain)
-                    .font(.system(size: 11))
-                    .foregroundStyle(.white)
-                    .frame(width: 120)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
-                    .background(Color.white.opacity(0.08), in: Capsule())
-            }
-
-            if visibleItems.isEmpty {
-                Text(query.isEmpty ? "Copy something to see it here" : "No matches")
-                    .font(.system(size: 11))
-                    .foregroundStyle(.white.opacity(0.4))
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    LazyHStack(spacing: 8) {
-                        ForEach(visibleItems) { item in
-                            ClipboardCard(item: item, isCopied: copiedID == item.id)
-                                .onTapGesture { copy(item) }
-                                .contextMenu {
-                                    Button(item.isPinned ? "Unpin" : "Pin") { clipboard.togglePin(item) }
-                                    Button("Delete", role: .destructive) { clipboard.remove(item) }
-                                }
-                        }
+        if visibleItems.isEmpty {
+            Text(query.isEmpty ? "Copy something to see it here" : "No matches")
+                .font(.system(size: 11))
+                .foregroundStyle(.white.opacity(0.4))
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else {
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(spacing: 8) {
+                    ForEach(visibleItems) { item in
+                        ClipboardCard(item: item, isCopied: copiedID == item.id)
+                            .onTapGesture { copy(item) }
+                            .contextMenu {
+                                Button(item.isPinned ? "Unpin" : "Pin") { clipboard.togglePin(item) }
+                                Button("Delete", role: .destructive) { clipboard.remove(item) }
+                            }
                     }
                 }
             }
