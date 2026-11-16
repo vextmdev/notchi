@@ -1,0 +1,118 @@
+import SwiftUI
+
+struct ClipboardView: View {
+    @ObservedObject var clipboard: ClipboardMonitor
+    @State private var query = ""
+    @State private var copiedID: UUID?
+
+    private var visibleItems: [ClipboardItem] {
+        let filtered = clipboard.items.filter { item in
+            guard !query.isEmpty else { return true }
+            return item.text?.localizedCaseInsensitiveContains(query) ?? false
+        }
+        return filtered.filter(\.isPinned) + filtered.filter { !$0.isPinned }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Label("Clipboard", systemImage: "doc.on.clipboard")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.6))
+
+                Spacer()
+
+                TextField("Search", text: $query)
+                    .textFieldStyle(.plain)
+                    .font(.system(size: 11))
+                    .foregroundStyle(.white)
+                    .frame(width: 120)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(Color.white.opacity(0.08), in: Capsule())
+            }
+
+            if visibleItems.isEmpty {
+                Text(query.isEmpty ? "Copy something to see it here" : "No matches")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.white.opacity(0.4))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    LazyHStack(spacing: 8) {
+                        ForEach(visibleItems) { item in
+                            ClipboardCard(item: item, isCopied: copiedID == item.id)
+                                .onTapGesture { copy(item) }
+                                .contextMenu {
+                                    Button(item.isPinned ? "Unpin" : "Pin") { clipboard.togglePin(item) }
+                                    Button("Delete", role: .destructive) { clipboard.remove(item) }
+                                }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private func copy(_ item: ClipboardItem) {
+        clipboard.copy(item)
+        copiedID = item.id
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+            if copiedID == item.id { copiedID = nil }
+        }
+    }
+}
+
+private struct ClipboardCard: View {
+    let item: ClipboardItem
+    let isCopied: Bool
+    @State private var isHovered = false
+
+    var body: some View {
+        ZStack(alignment: .topTrailing) {
+            content
+                .frame(width: 110, height: 92, alignment: .topLeading)
+                .background(Color.white.opacity(isHovered ? 0.14 : 0.08))
+                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+
+            if item.isPinned {
+                Image(systemName: "pin.fill")
+                    .font(.system(size: 9))
+                    .foregroundStyle(.yellow)
+                    .padding(6)
+            }
+
+            if isCopied {
+                Text("Copied")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(.black)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(Color.white, in: Capsule())
+                    .frame(width: 110, height: 92)
+                    .transition(.opacity)
+            }
+        }
+        .animation(.easeOut(duration: 0.15), value: isHovered)
+        .animation(.easeOut(duration: 0.15), value: isCopied)
+        .onHover { isHovered = $0 }
+    }
+
+    @ViewBuilder
+    private var content: some View {
+        switch item.content {
+        case .text(let text):
+            Text(text)
+                .font(.system(size: 11))
+                .foregroundStyle(.white.opacity(0.9))
+                .lineLimit(5)
+                .padding(8)
+        case .image(let image):
+            Image(nsImage: image)
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .frame(width: 110, height: 92)
+                .clipped()
+        }
+    }
+}

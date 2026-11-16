@@ -1,0 +1,41 @@
+name: Notchi
+options:
+  bundleIdPrefix: io.github.vextmdev
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+
+targets:
+  Notchi:
+    type: application
+    platform: macOS
+    sources:
+      - path: Notchi
+    info:
+      path: Support/Info.plist
+      properties:
+        CFBundleDisplayName: Notchi
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        LSMinimumSystemVersion: $(MACOSX_DEPLOYMENT_TARGET)
+        LSUIElement: true
+        NSAppleEventsUsageDescription: Notchi uses Apple Events to show and control what's playing in Spotify and Music.
+        NSHumanReadableCopyright: Released under the MIT License.
+    entitlements:
+      path: Support/Notchi.entitlements
+      properties:
+        com.apple.security.automation.apple-events: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.vextmdev.notchi
+        PRODUCT_NAME: Notchi
+        ENABLE_HARDENED_RUNTIME: YES
+        CODE_SIGN_STYLE: Manual
+        CODE_SIGN_IDENTITY: "-"
+    scheme: {}
