@@ -20,8 +20,11 @@ final class NotchWindowController {
 
     private let hoverPadding: CGFloat = 10
     private let dragPadding: CGFloat = 40
-    private let expandDelay: TimeInterval = 0.12
     private let collapseDelay: TimeInterval = 0.3
+
+    private var expandDelay: TimeInterval {
+        UserDefaults.standard.double(forKey: Preferences.hoverDelay)
+    }
 
     init(model: NotchViewModel, clipboard: ClipboardMonitor, media: MediaController, shelf: ShelfStore) {
         self.model = model
@@ -139,7 +142,9 @@ final class NotchWindowController {
         guard !model.isExpanded else { return }
         model.isExpanded = true
         panel.ignoresMouseEvents = false
-        NSHapticFeedbackManager.defaultPerformer.perform(.levelChange, performanceTime: .now)
+        if UserDefaults.standard.bool(forKey: Preferences.hapticsEnabled) {
+            NSHapticFeedbackManager.defaultPerformer.perform(.levelChange, performanceTime: .now)
+        }
     }
 
     private func collapse() {

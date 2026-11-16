@@ -7,7 +7,10 @@ final class ClipboardMonitor: ObservableObject {
     private let pasteboard = NSPasteboard.general
     private var lastChangeCount: Int
     private var timer: Timer?
-    private let maxUnpinnedItems = 30
+
+    private var maxUnpinnedItems: Int {
+        UserDefaults.standard.integer(forKey: Preferences.clipboardLimit)
+    }
 
     // password managers mark secrets with these (nspasteboard.org)
     private static let ignoredTypes: Set<String> = [
@@ -33,6 +36,7 @@ final class ClipboardMonitor: ObservableObject {
     private func checkForChanges() {
         guard pasteboard.changeCount != lastChangeCount else { return }
         lastChangeCount = pasteboard.changeCount
+        guard UserDefaults.standard.bool(forKey: Preferences.clipboardEnabled) else { return }
 
         let types = Set((pasteboard.types ?? []).map(\.rawValue))
         guard types.isDisjoint(with: Self.ignoredTypes) else { return }

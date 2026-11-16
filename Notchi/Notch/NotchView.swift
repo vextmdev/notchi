@@ -7,6 +7,9 @@ struct NotchView: View {
     @ObservedObject var media: MediaController
     @ObservedObject var shelf: ShelfStore
 
+    // only here so the view redraws when the setting changes
+    @AppStorage(Preferences.showNowPlaying) private var showNowPlayingSetting = true
+
     private var currentSize: CGSize {
         model.isExpanded ? model.expandedSize : model.collapsedSize
     }
@@ -27,7 +30,7 @@ struct NotchView: View {
                         .padding(.horizontal, 22)
                         .padding(.bottom, 16)
                         .transition(.opacity.combined(with: .scale(scale: 0.96, anchor: .top)))
-                } else if model.showsNowPlaying {
+                } else if model.isNowPlayingVisible {
                     NowPlayingWings(
                         media: media,
                         wingWidth: model.nowPlayingWingWidth,
@@ -43,7 +46,7 @@ struct NotchView: View {
         }
         .frame(width: model.expandedSize.width, height: model.expandedSize.height, alignment: .top)
         .animation(.spring(response: 0.38, dampingFraction: 0.8), value: model.isExpanded)
-        .animation(.spring(response: 0.45, dampingFraction: 0.85), value: model.showsNowPlaying)
+        .animation(.spring(response: 0.45, dampingFraction: 0.85), value: model.isNowPlayingVisible)
         .environment(\.colorScheme, .dark)
         // lives up here so the preview stays open when the notch collapses
         .quickLookPreview($model.previewURL)

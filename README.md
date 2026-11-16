@@ -21,6 +21,7 @@ Hover over the notch for your clipboard history, a file shelf and music controls
 - **File shelf**: drag files onto the notch to park them there, then drag them out wherever you need them. Click for Quick Look.
 - **Respects passwords**: items marked as concealed by password managers are never recorded.
 - **Media controls**: see what's playing in Spotify or Apple Music, with artwork, play/pause and skip.
+- **macOS tweaks**: keep your Mac awake, hide desktop icons, show hidden files, instant Dock, screenshot format and folder, all with one switch.
 - **Lightweight**: native Swift, no Electron, no tracking, nothing leaves your Mac.
 - Works on Macs without a notch too (shows a small pill at the top of the screen).
 
@@ -50,7 +51,7 @@ Then press **Run** (⌘R) in Xcode.
 - [ ] Prebuilt, notarized releases + Homebrew cask
 - [x] File shelf
 - [ ] More media sources (browsers, other players)
-- [ ] Settings window (history size, hover delay, which widgets to show)
+- [x] Settings window
 - [ ] Calendar and battery widgets
 
 ## Contributing

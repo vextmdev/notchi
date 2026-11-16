@@ -14,11 +14,17 @@ final class NotchViewModel: ObservableObject {
     @Published var isDropTargeted = false
     @Published var previewURL: URL?
 
+    var openSettings: () -> Void = {}
+
     let expandedSize = CGSize(width: 580, height: 190)
     let nowPlayingWingWidth: CGFloat = 34
 
+    var isNowPlayingVisible: Bool {
+        showsNowPlaying && UserDefaults.standard.bool(forKey: Preferences.showNowPlaying)
+    }
+
     var collapsedSize: CGSize {
-        guard showsNowPlaying else { return notchSize }
+        guard isNowPlayingVisible else { return notchSize }
         return CGSize(width: notchSize.width + nowPlayingWingWidth * 2, height: notchSize.height)
     }
 }

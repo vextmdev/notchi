@@ -77,6 +77,16 @@ struct ExpandedContent: View {
                     .font(.system(size: 11))
                     .foregroundStyle(.white.opacity(0.5))
             }
+
+            Button(action: model.openSettings) {
+                Image(systemName: "gearshape")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.white.opacity(0.5))
+                    .frame(width: 20, height: 20)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .help("Settings")
         }
     }
 }
