@@ -4,6 +4,7 @@ import SwiftUI
 
 enum SettingsPage: String, CaseIterable, Identifiable {
     case general
+    case themes
     case storage
     case tweaks
     case about
@@ -13,6 +14,7 @@ enum SettingsPage: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .general: return "General"
+        case .themes: return "Themes"
         case .storage: return "Clipboard & Shelf"
         case .tweaks: return "Tweaks"
         case .about: return "About"
@@ -22,6 +24,7 @@ enum SettingsPage: String, CaseIterable, Identifiable {
     var symbol: String {
         switch self {
         case .general: return "gearshape.fill"
+        case .themes: return "snowflake"
         case .storage: return "doc.on.clipboard.fill"
         case .tweaks: return "wand.and.stars"
         case .about: return "info"
@@ -31,6 +34,7 @@ enum SettingsPage: String, CaseIterable, Identifiable {
     var color: Color {
         switch self {
         case .general: return .gray
+        case .themes: return .cyan
         case .storage: return .blue
         case .tweaks: return .purple
         case .about: return .pink
@@ -84,6 +88,8 @@ struct SettingsView: View {
         switch page {
         case .general:
             GeneralSettings()
+        case .themes:
+            ThemeSettings()
         case .storage:
             StorageSettings(clipboard: clipboard, shelf: shelf)
         case .tweaks:

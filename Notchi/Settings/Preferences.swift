@@ -7,6 +7,14 @@ enum Preferences {
     static let clipboardEnabled = "clipboardEnabled"
     static let clipboardLimit = "clipboardLimit"
 
+    static let theme = "theme"
+    static let snowfallEnabled = "snowfallEnabled"
+    static let snowAmount = "snowAmount"
+    static let snowPlacement = "snowPlacement"
+    static let windowSnowEnabled = "windowSnowEnabled"
+    static let fairyLightsEnabled = "fairyLightsEnabled"
+    static let snowPuffsEnabled = "snowPuffsEnabled"
+
     // keep these in sync with the @AppStorage defaults in SettingsView
     static func registerDefaults() {
         UserDefaults.standard.register(defaults: [
@@ -15,6 +23,14 @@ enum Preferences {
             showNowPlaying: true,
             clipboardEnabled: true,
             clipboardLimit: 30,
+
+            theme: "off",
+            snowfallEnabled: true,
+            snowAmount: "light",
+            snowPlacement: "desktop",
+            windowSnowEnabled: true,
+            fairyLightsEnabled: true,
+            snowPuffsEnabled: true,
         ])
     }
 }

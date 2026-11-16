@@ -149,6 +149,7 @@ final class NotchWindowController {
 
     private func collapse() {
         guard model.isExpanded else { return }
+        model.onCollapse(panel.frame)
         model.isExpanded = false
         model.isDropTargeted = false
         panel.ignoresMouseEvents = true

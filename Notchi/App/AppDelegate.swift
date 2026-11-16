@@ -11,6 +11,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     private var notchController: NotchWindowController?
     private var settingsController: SettingsWindowController?
+    private var themeController: ThemeController?
     private var statusItem: NSStatusItem?
 
     private var launchAtLoginItem: NSMenuItem?
@@ -26,6 +27,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let settings = SettingsWindowController(clipboard: clipboard, shelf: shelf, keepAwake: keepAwake)
         settingsController = settings
         model.openSettings = { settings.show() }
+
+        let themes = ThemeController()
+        themeController = themes
+        model.onCollapse = { frame in themes.notchPuff(below: frame) }
 
         notchController = NotchWindowController(model: model, clipboard: clipboard, media: media, shelf: shelf)
         setUpStatusItem()

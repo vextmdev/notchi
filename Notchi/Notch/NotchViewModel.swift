@@ -15,6 +15,8 @@ final class NotchViewModel: ObservableObject {
     @Published var previewURL: URL?
 
     var openSettings: () -> Void = {}
+    // gets the frame of the open notch right before it closes
+    var onCollapse: (CGRect) -> Void = { _ in }
 
     // height follows the notch, so taller notches don't squash the content
     var expandedSize: CGSize {
