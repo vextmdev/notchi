@@ -21,7 +21,7 @@ struct ClipboardView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
             ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(spacing: 8) {
+                LazyHStack(alignment: .top, spacing: 8) {
                     ForEach(visibleItems) { item in
                         ClipboardCard(item: item, isCopied: copiedID == item.id)
                             .onTapGesture { copy(item) }
@@ -83,10 +83,12 @@ private struct ClipboardCard: View {
     private var content: some View {
         switch item.content {
         case .text(let text):
-            Text(text)
+            Text(preview(of: text))
                 .font(.system(size: 11))
                 .foregroundStyle(.white.opacity(0.9))
+                .multilineTextAlignment(.leading)
                 .lineLimit(5)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 .padding(8)
         case .image(let image):
             Image(nsImage: image)
@@ -95,5 +97,15 @@ private struct ClipboardCard: View {
                 .frame(width: 110, height: 92)
                 .clipped()
         }
+    }
+
+    // big copies (code, logs) are slow to lay out and look messy, so only show a cleaned up start
+    private func preview(of text: String) -> String {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        let lines = trimmed.prefix(300)
+            .components(separatedBy: .newlines)
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+        return lines.joined(separator: "\n")
     }
 }

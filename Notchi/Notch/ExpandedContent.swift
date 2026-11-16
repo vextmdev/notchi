@@ -17,16 +17,23 @@ struct ExpandedContent: View {
                 .fill(Color.white.opacity(0.1))
                 .frame(width: 1)
 
+            // fixed heights so switching tabs never shifts anything around
             VStack(alignment: .leading, spacing: 8) {
                 header
+                    .frame(height: 22)
 
-                switch model.selectedTab {
-                case .clipboard:
-                    ClipboardView(clipboard: clipboard, query: query)
-                case .shelf:
-                    ShelfView(shelf: shelf, previewURL: $model.previewURL)
+                Group {
+                    switch model.selectedTab {
+                    case .clipboard:
+                        ClipboardView(clipboard: clipboard, query: query)
+                    case .shelf:
+                        ShelfView(shelf: shelf, previewURL: $model.previewURL)
+                    }
                 }
+                .frame(maxWidth: .infinity, minHeight: 92, maxHeight: 92, alignment: .topLeading)
+                .clipped()
             }
+            .frame(maxHeight: .infinity, alignment: .top)
         }
         .overlay {
             if model.isDropTargeted {

@@ -1,26 +1,112 @@
 import ServiceManagement
 import SwiftUI
 
+enum SettingsPage: String, CaseIterable, Identifiable {
+    case general
+    case storage
+    case tweaks
+    case about
+
+    var id: Self { self }
+
+    var title: String {
+        switch self {
+        case .general: return "General"
+        case .storage: return "Clipboard & Shelf"
+        case .tweaks: return "Tweaks"
+        case .about: return "About"
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .general: return "gearshape.fill"
+        case .storage: return "doc.on.clipboard.fill"
+        case .tweaks: return "wand.and.stars"
+        case .about: return "info"
+        }
+    }
+
+    var color: Color {
+        switch self {
+        case .general: return .gray
+        case .storage: return .blue
+        case .tweaks: return .purple
+        case .about: return .pink
+        }
+    }
+}
+
 struct SettingsView: View {
     @ObservedObject var clipboard: ClipboardMonitor
     @ObservedObject var shelf: ShelfStore
     @ObservedObject var keepAwake: KeepAwake
 
+    @State private var page: SettingsPage? = .general
+
     var body: some View {
-        TabView {
-            GeneralSettings()
-                .tabItem { Label("General", systemImage: "gearshape") }
+        HStack(spacing: 0) {
+            List(SettingsPage.allCases, selection: $page) { page in
+                Label {
+                    Text(page.title)
+                } icon: {
+                    SettingsIcon(symbol: page.symbol, color: page.color)
+                }
+                .tag(page)
+            }
+            .listStyle(.sidebar)
+            .contentMargins(.top, 30, for: .scrollContent)
+            .frame(width: 200)
 
-            StorageSettings(clipboard: clipboard, shelf: shelf)
-                .tabItem { Label("Clipboard & Shelf", systemImage: "doc.on.clipboard") }
+            Divider()
 
-            TweakSettings(keepAwake: keepAwake)
-                .tabItem { Label("Tweaks", systemImage: "wand.and.stars") }
+            VStack(alignment: .leading, spacing: 0) {
+                Text((page ?? .general).title)
+                    .font(.title2.bold())
+                    .padding(.horizontal, 28)
+                    .padding(.top, 14)
 
-            AboutSettings()
-                .tabItem { Label("About", systemImage: "info.circle") }
+                detail
+                    .toggleStyle(.switch)
+                    .controlSize(.small)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
-        .frame(width: 500, height: 480)
+        .frame(width: 720, height: 520)
+        // sidebar goes all the way up under the traffic lights
+        .ignoresSafeArea(.container, edges: .top)
+    }
+
+    @ViewBuilder
+    private var detail: some View {
+        switch page ?? .general {
+        case .general:
+            GeneralSettings()
+        case .storage:
+            StorageSettings(clipboard: clipboard, shelf: shelf)
+        case .tweaks:
+            TweakSettings(keepAwake: keepAwake)
+        case .about:
+            AboutSettings()
+        }
+    }
+}
+
+// colored rounded square like in System Settings
+private struct SettingsIcon: View {
+    let symbol: String
+    let color: Color
+    var size: CGFloat = 22
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: size * 0.27, style: .continuous)
+            .fill(color.gradient)
+            .frame(width: size, height: size)
+            .overlay(
+                Image(systemName: symbol)
+                    .font(.system(size: size * 0.5, weight: .semibold))
+                    .foregroundStyle(.white)
+            )
     }
 }
 
@@ -131,7 +217,8 @@ private struct TweakSettings: View {
                     TweakLabel(
                         title: "Keep Mac awake",
                         detail: "Stops the display from sleeping until you turn it off.",
-                        symbol: "cup.and.saucer"
+                        symbol: "cup.and.saucer.fill",
+                        color: .orange
                     )
                 }
             }
@@ -228,19 +315,20 @@ private struct TweakLabel: View {
     let title: String
     let detail: String
     let symbol: String
+    var color: Color = .indigo
 
     var body: some View {
-        HStack(spacing: 10) {
-            Image(systemName: symbol)
-                .foregroundStyle(.secondary)
-                .frame(width: 20)
+        HStack(spacing: 12) {
+            SettingsIcon(symbol: symbol, color: color, size: 26)
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                 Text(detail)
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
+        .padding(.vertical, 2)
     }
 }
 
@@ -252,23 +340,31 @@ private struct AboutSettings: View {
     }
 
     var body: some View {
-        VStack(spacing: 10) {
-            Image(nsImage: NSApp.applicationIconImage)
-                .resizable()
-                .frame(width: 80, height: 80)
+        Form {
+            Section {
+                HStack(spacing: 16) {
+                    Image(nsImage: NSApp.applicationIconImage)
+                        .resizable()
+                        .frame(width: 64, height: 64)
 
-            Text("Notchi")
-                .font(.title.bold())
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Notchi")
+                            .font(.title2.bold())
+                        Text("Your MacBook notch, but useful.")
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .padding(.vertical, 6)
+            }
 
-            Text("Version \(version)")
-                .foregroundStyle(.secondary)
-
-            Text("Your MacBook notch, but useful.")
-                .padding(.top, 4)
-
-            Link("github.com/vextmdev/notchi", destination: URL(string: "https://github.com/vextmdev/notchi")!)
-                .padding(.top, 8)
+            Section {
+                LabeledContent("Version", value: version)
+                LabeledContent("Source code") {
+                    Link("github.com/vextmdev/notchi", destination: URL(string: "https://github.com/vextmdev/notchi")!)
+                }
+                LabeledContent("License", value: "MIT")
+            }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .formStyle(.grouped)
     }
 }

@@ -19,7 +19,7 @@ struct ShelfView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
-                    LazyHStack(spacing: 8) {
+                    LazyHStack(alignment: .top, spacing: 8) {
                         ForEach(shelf.items) { item in
                             ShelfCard(item: item)
                                 .onDrag { NSItemProvider(object: item.url as NSURL) }

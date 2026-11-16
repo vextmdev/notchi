@@ -16,7 +16,10 @@ final class NotchViewModel: ObservableObject {
 
     var openSettings: () -> Void = {}
 
-    let expandedSize = CGSize(width: 580, height: 190)
+    // height follows the notch, so taller notches don't squash the content
+    var expandedSize: CGSize {
+        CGSize(width: 580, height: notchSize.height + 152)
+    }
     let nowPlayingWingWidth: CGFloat = 34
 
     var isNowPlayingVisible: Bool {

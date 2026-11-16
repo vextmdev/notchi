@@ -81,13 +81,9 @@ final class ClipboardMonitor: ObservableObject {
         case .image(let image):
             pasteboard.writeObjects([image])
         }
+        // remember the change count so this copy doesn't show up as a new item.
+        // the item stays where it is, moving it made the whole row jump around
         lastChangeCount = pasteboard.changeCount
-
-        if let index = items.firstIndex(where: { $0.id == item.id }) {
-            var moved = items.remove(at: index)
-            moved.date = Date()
-            items.insert(moved, at: 0)
-        }
     }
 
     func togglePin(_ item: ClipboardItem) {
