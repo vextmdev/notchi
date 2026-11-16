@@ -36,6 +36,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         setUpStatusItem()
     }
 
+    func applicationWillTerminate(_ notification: Notification) {
+        // don't lose the last second of copies when quitting
+        clipboard.saveNow(wait: true)
+    }
+
     // MARK: - Menu bar
 
     private func setUpStatusItem() {

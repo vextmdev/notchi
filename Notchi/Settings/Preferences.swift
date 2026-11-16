@@ -6,6 +6,7 @@ enum Preferences {
     static let showNowPlaying = "showNowPlaying"
     static let clipboardEnabled = "clipboardEnabled"
     static let clipboardLimit = "clipboardLimit"
+    static let clipboardRemember = "clipboardRemember"
 
     static let theme = "theme"
     static let snowfallEnabled = "snowfallEnabled"
@@ -24,6 +25,7 @@ enum Preferences {
             showNowPlaying: true,
             clipboardEnabled: true,
             clipboardLimit: 30,
+            clipboardRemember: true,
 
             theme: "off",
             snowfallEnabled: true,

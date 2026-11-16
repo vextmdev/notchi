@@ -211,6 +211,7 @@ private struct StorageSettings: View {
 
     @AppStorage(Preferences.clipboardEnabled) private var clipboardEnabled = true
     @AppStorage(Preferences.clipboardLimit) private var clipboardLimit = 30
+    @AppStorage(Preferences.clipboardRemember) private var clipboardRemember = true
 
     var body: some View {
         Form {
@@ -223,6 +224,9 @@ private struct StorageSettings: View {
                     }
                 }
                 .disabled(!clipboardEnabled)
+
+                Toggle("Keep history after restart", isOn: $clipboardRemember)
+                    .onChange(of: clipboardRemember) { _, _ in clipboard.saveNow() }
 
                 LabeledContent("Saved items", value: "\(clipboard.items.count)")
 
@@ -238,7 +242,7 @@ private struct StorageSettings: View {
             } header: {
                 Text("Shelf")
             } footer: {
-                Text("Pinned clipboard items are kept when you clear the history. Clearing the shelf never deletes the actual files.")
+                Text("Pinned clipboard items are kept when you clear the history. The history is stored only on this Mac. Clearing the shelf never deletes the actual files.")
             }
         }
         .formStyle(.grouped)

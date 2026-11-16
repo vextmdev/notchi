@@ -2,11 +2,19 @@ import AppKit
 
 @MainActor
 final class ClipboardMonitor: ObservableObject {
-    @Published private(set) var items: [ClipboardItem] = []
+    @Published private(set) var items: [ClipboardItem] = [] {
+        didSet { scheduleSave() }
+    }
 
     private let pasteboard = NSPasteboard.general
+    private let store = ClipboardStore()
     private var lastChangeCount: Int
     private var timer: Timer?
+    private var pendingSave: Task<Void, Never>?
+
+    private var remembersHistory: Bool {
+        UserDefaults.standard.bool(forKey: Preferences.clipboardRemember)
+    }
 
     private var maxUnpinnedItems: Int {
         UserDefaults.standard.integer(forKey: Preferences.clipboardLimit)
@@ -25,6 +33,12 @@ final class ClipboardMonitor: ObservableObject {
     }
 
     func start() {
+        // load here and not in init, the defaults aren't registered yet at that point
+        if remembersHistory {
+            items = store.load()
+            trim()
+        }
+
         timer?.invalidate()
         timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.checkForChanges() }
@@ -68,6 +82,28 @@ final class ClipboardMonitor: ObservableObject {
             if item.isPinned { return true }
             unpinnedCount += 1
             return unpinnedCount <= maxUnpinnedItems
+        }
+    }
+
+    // MARK: - Saving
+
+    // batch quick changes (pinning a few things, copying fast) into one write
+    private func scheduleSave() {
+        pendingSave?.cancel()
+        pendingSave = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(1))
+            guard !Task.isCancelled else { return }
+            self?.saveNow()
+        }
+    }
+
+    func saveNow(wait: Bool = false) {
+        pendingSave?.cancel()
+        pendingSave = nil
+        if remembersHistory {
+            store.save(items, wait: wait)
+        } else {
+            store.clear()
         }
     }
 
