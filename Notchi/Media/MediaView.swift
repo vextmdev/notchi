@@ -5,15 +5,14 @@ struct MediaView: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            artwork
+            ArtworkView(url: media.artworkURL)
                 .frame(width: 64, height: 64)
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(media.title ?? "Nothing playing")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .lineLimit(1)
+                MarqueeText(
+                    text: media.title ?? "Nothing playing",
+                    font: .system(size: 13, weight: .semibold)
+                )
 
                 Text(media.artist ?? "Open Spotify or Music")
                     .font(.system(size: 11))
@@ -33,28 +32,6 @@ struct MediaView: View {
             Spacer(minLength: 0)
         }
         .frame(maxHeight: .infinity)
-    }
-
-    @ViewBuilder
-    private var artwork: some View {
-        if let url = media.artworkURL {
-            AsyncImage(url: url) { image in
-                image.resizable().aspectRatio(contentMode: .fill)
-            } placeholder: {
-                placeholder
-            }
-        } else {
-            placeholder
-        }
-    }
-
-    private var placeholder: some View {
-        ZStack {
-            Color.white.opacity(0.08)
-            Image(systemName: "music.note")
-                .font(.system(size: 22))
-                .foregroundStyle(.white.opacity(0.5))
-        }
     }
 }
 

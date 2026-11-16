@@ -1,4 +1,5 @@
 import AppKit
+import Combine
 import SwiftUI
 
 @MainActor
@@ -10,9 +11,12 @@ final class NotchWindowController {
     private var globalMonitor: Any?
     private var localMonitor: Any?
     private var screenObserver: NSObjectProtocol?
+    private var expandWorkItem: DispatchWorkItem?
     private var collapseWorkItem: DispatchWorkItem?
+    private var cancellables = Set<AnyCancellable>()
 
     private let hoverPadding: CGFloat = 10
+    private let expandDelay: TimeInterval = 0.12
     private let collapseDelay: TimeInterval = 0.3
 
     init(model: NotchViewModel, clipboard: ClipboardMonitor, media: MediaController) {
@@ -23,6 +27,11 @@ final class NotchWindowController {
         let hostingView = NSHostingView(rootView: rootView)
         hostingView.sizingOptions = []
         panel.contentView = hostingView
+
+        media.$isPlaying
+            .removeDuplicates()
+            .sink { [weak model] isPlaying in model?.showsNowPlaying = isPlaying }
+            .store(in: &cancellables)
 
         layout()
         panel.orderFrontRegardless()
@@ -67,7 +76,6 @@ final class NotchWindowController {
     }
 
     private func handleMouseMoved() {
-        guard let geometry else { return }
         let mouse = NSEvent.mouseLocation
 
         if model.isExpanded {
@@ -76,20 +84,24 @@ final class NotchWindowController {
             } else {
                 scheduleCollapse()
             }
-        } else if hotZone(for: geometry).contains(mouse) {
-            expand()
+        } else if isInHotZone(mouse) {
+            scheduleExpand()
+        } else {
+            cancelExpand()
         }
     }
 
-    private func hotZone(for geometry: NotchGeometry) -> NSRect {
+    private func isInHotZone(_ point: NSPoint) -> Bool {
+        guard let geometry else { return false }
         let screenFrame = geometry.screen.frame
-        let size = geometry.notchSize
-        return NSRect(
+        let size = model.collapsedSize
+        let zone = NSRect(
             x: screenFrame.midX - size.width / 2 - hoverPadding,
             y: screenFrame.maxY - size.height - 4,
             width: size.width + hoverPadding * 2,
             height: size.height + 8 // extra so the top pixel row counts
         )
+        return zone.contains(point)
     }
 
     private func expand() {
@@ -97,6 +109,7 @@ final class NotchWindowController {
         guard !model.isExpanded else { return }
         model.isExpanded = true
         panel.ignoresMouseEvents = false
+        NSHapticFeedbackManager.defaultPerformer.perform(.levelChange, performanceTime: .now)
     }
 
     private func collapse() {
@@ -106,6 +119,27 @@ final class NotchWindowController {
         if panel.isKeyWindow {
             panel.resignKey()
         }
+    }
+
+    // short delay so it doesn't pop open when you just pass by
+    private func scheduleExpand() {
+        guard expandWorkItem == nil else { return }
+        let work = DispatchWorkItem { [weak self] in
+            Task { @MainActor in
+                guard let self else { return }
+                self.expandWorkItem = nil
+                if self.isInHotZone(NSEvent.mouseLocation) {
+                    self.expand()
+                }
+            }
+        }
+        expandWorkItem = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + expandDelay, execute: work)
+    }
+
+    private func cancelExpand() {
+        expandWorkItem?.cancel()
+        expandWorkItem = nil
     }
 
     private func scheduleCollapse() {

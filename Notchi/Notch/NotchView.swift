@@ -6,7 +6,7 @@ struct NotchView: View {
     @ObservedObject var media: MediaController
 
     private var currentSize: CGSize {
-        model.isExpanded ? model.expandedSize : model.notchSize
+        model.isExpanded ? model.expandedSize : model.collapsedSize
     }
 
     private var cornerRadius: CGFloat {
@@ -25,6 +25,13 @@ struct NotchView: View {
                         .padding(.horizontal, 22)
                         .padding(.bottom, 16)
                         .transition(.opacity.combined(with: .scale(scale: 0.96, anchor: .top)))
+                } else if model.showsNowPlaying {
+                    NowPlayingWings(
+                        media: media,
+                        wingWidth: model.nowPlayingWingWidth,
+                        height: model.notchSize.height
+                    )
+                    .transition(.opacity)
                 }
             }
             .frame(width: currentSize.width, height: currentSize.height)
@@ -34,6 +41,7 @@ struct NotchView: View {
         }
         .frame(width: model.expandedSize.width, height: model.expandedSize.height, alignment: .top)
         .animation(.spring(response: 0.38, dampingFraction: 0.8), value: model.isExpanded)
+        .animation(.spring(response: 0.45, dampingFraction: 0.85), value: model.showsNowPlaying)
         .environment(\.colorScheme, .dark)
     }
 }
@@ -53,5 +61,26 @@ private struct ExpandedContent: View {
 
             ClipboardView(clipboard: clipboard)
         }
+    }
+}
+
+// artwork on the left of the notch, bars on the right
+private struct NowPlayingWings: View {
+    @ObservedObject var media: MediaController
+    let wingWidth: CGFloat
+    let height: CGFloat
+
+    var body: some View {
+        HStack(spacing: 0) {
+            ArtworkView(url: media.artworkURL, cornerRadius: 5, symbolSize: 10)
+                .frame(width: 20, height: 20)
+                .frame(width: wingWidth)
+
+            Spacer(minLength: 0)
+
+            EqualizerBars(isAnimating: media.isPlaying)
+                .frame(width: wingWidth)
+        }
+        .frame(height: height)
     }
 }
