@@ -61,8 +61,7 @@ private struct NowPlayingWings: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            ArtworkView(url: media.artworkURL, cornerRadius: 5, symbolSize: 10)
-                .frame(width: 20, height: 20)
+            ArtworkView(url: media.artworkURL, size: 20, cornerRadius: 5, symbolSize: 10)
                 .frame(width: wingWidth)
 
             Spacer(minLength: 0)

@@ -17,15 +17,17 @@ struct MarqueeText: View {
     private var overflows: Bool { textWidth > containerWidth + 1 }
 
     var body: some View {
-        label
+        // invisible line that only gives us the height, the width comes from the parent
+        Text(text)
+            .font(font)
+            .lineLimit(1)
             .opacity(0)
-            .background(widthReader { textWidth = $0 })
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
             .background(widthReader { containerWidth = $0 })
             .overlay(alignment: .leading) {
                 TimelineView(.animation(paused: !overflows)) { context in
                     HStack(spacing: gap) {
-                        label
+                        label.background(widthReader { textWidth = $0 })
                         if overflows { label }
                     }
                     .offset(x: overflows ? -offset(at: context.date) : 0)

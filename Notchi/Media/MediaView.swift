@@ -5,9 +5,9 @@ struct MediaView: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            ArtworkView(url: media.artworkURL)
-                .frame(width: 64, height: 64)
+            ArtworkView(url: media.artworkURL, size: 64)
 
+            // text column takes whatever is left and never pushes past it
             VStack(alignment: .leading, spacing: 4) {
                 MarqueeText(
                     text: media.title ?? "Nothing playing",
@@ -18,6 +18,8 @@ struct MediaView: View {
                     .font(.system(size: 11))
                     .foregroundStyle(.white.opacity(0.55))
                     .lineLimit(1)
+                    .truncationMode(.tail)
+                    .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
 
                 HStack(spacing: 16) {
                     ControlButton(symbol: "backward.fill", size: 13) { media.previous() }
@@ -28,10 +30,10 @@ struct MediaView: View {
                 .disabled(media.activePlayer == nil)
                 .opacity(media.activePlayer == nil ? 0.35 : 1)
             }
-
-            Spacer(minLength: 0)
+            .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
         }
         .frame(maxHeight: .infinity)
+        .clipped()
     }
 }
 
